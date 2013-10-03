@@ -1,0 +1,38 @@
+<!doctype html>
+<head>
+    <link rel="stylesheet" href="svg2Canvas.css" />
+    <script src="svg2Canvas.js"></script>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+</body>
+
+
+<script>
+  svg2Canvas('res/svg/simple-line.svg', {
+    
+    // If a string is provided, use it as an ID.
+    // If an HTML DOM element is provided, draw to the element
+    // If an nothing is provided, create the canvas and return it in the callback
+    
+    // "canvasId", canvasElement, null
+    canvas      : "canvas",         
+    // canvas      : document.getElementById('canvas'),
+    // canvas      : document.createElement('canvas'),
+    
+    // Returns a dataurl instead of a canvas element
+    // toDataURL   : true,             // true, false
+    
+    // Sets the rendering width/height of the output image (used to draw at different scales without pixelating)
+    width       : 128,
+    height      : 128,
+
+    // Sets the pixel density
+    // "auto", 1, 2, x
+    // density     : 'auto',                
+    // density     : 1,
+    density     : 2,
+
+    callback    : function(result){ return result; }
+  });
+</script>

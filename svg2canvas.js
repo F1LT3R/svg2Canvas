@@ -1,10 +1,3 @@
-/*
- * svg2canvas.js
- * Alistair MacDonald
- * MIT License
- *
- */
-
 (function() {
   'use strict';
 
@@ -76,6 +69,7 @@
     }
   ;
 
+
   // Load an XML Document. Especially an SVG :)
   function load (url) {
     var xmlDoc = new XMLHttpRequest();
@@ -91,6 +85,8 @@
     var fill          = node.getAttribute('fill')
       , stroke        = node.getAttribute('stroke')
       , strokeWidth   = node.getAttribute('stroke-width')
+      
+      // HTML5 Canvas Based Blur (not saved as raster that gets pixelated when scaled)
       , shadow        = node.getAttribute('shadow')
       , shadowBlur    = node.getAttribute('shadow-blur')
       , shadowOffsetX = node.getAttribute('shadow-offset-x')
@@ -98,13 +94,13 @@
       ;
 
     if (shadow) {
-      c.shadowColor = shadow;
-      c.shadowBlur = shadowBlur * Math.sqrt(scaleX * scaleY);
+      c.shadowColor   = shadow;
+      c.shadowBlur    = shadowBlur * Math.sqrt(scaleX * scaleY);
       c.shadowOffsetX = shadowOffsetX * scaleX;
       c.shadowOffsetY = shadowOffsetY * scaleY;
     } else {
-      c.shadowColor = '';
-      c.shadowBlur = 0;
+      c.shadowColor   = '';
+      c.shadowBlur    = 0;
       c.shadowOffsetX = 0;
       c.shadowOffsetY = 0;
     }
@@ -114,6 +110,10 @@
       c.fill();
     } else {
       c.filleStyle = '';
+    }
+
+    if (strokeWidth) {
+      c.lineWidth = strokeWidth;
     }
 
     if (stroke) {
@@ -141,7 +141,6 @@
       processCommand[commandType](nextCommand);
     }
 
-    c.closePath();
     applyAttrs(node);
 
   }
@@ -176,24 +175,44 @@
   }
 
 
-  // Public Interface for svg2canvas features
-  window.svg2canvas = function (file, canvasId, pixelDensity, setWidth, setHeight, callback) {
 
-    var response    = load(file)
-      , canvas      = document.getElementById(canvasId)
-      , svg         = response.getElementsByTagName('svg')[0]
-      , svgWidth    = svg.getAttribute('width')
-      , svgHeight   = svg.getAttribute('height')
-      , width       = setWidth  || svgWidth
-      , height      = setHeight || svgHeight
+  // Public Interface for svg2canvas features
+  window.svg2Canvas = function (file, props) {
+
+    var response  = load(file)
+      , svg       = response.getElementsByTagName('svg')[0]
+      , svgWidth  = svg.getAttribute('width')
+      , svgHeight = svg.getAttribute('height')
+      , width     = props.width || svgWidth
+      , height    = props.height || svgHeight
+      , density
+      , canvas
+      , result
       ;
+
+    if (!props.density || props.density === 'auto') {
+      density = window.devicePixelRatio;
+    } else if (typeof props.density === 'number') {
+      density = props.density;
+    }
+
+    switch (typeof props.canvas) {
+    case 'string':
+      canvas = document.getElementById(props.canvas);
+      break;
+    case 'object':
+      canvas = props.canvas;
+      break;
+    default:
+      canvas = document.createElement('canvas');
+    }
     
-    scaleX = width / svgWidth * pixelDensity;
-    scaleY = height / svgHeight * pixelDensity;
+    scaleX = width / svgWidth * density;
+    scaleY = height / svgHeight * density;
     scaleSqrt = Math.sqrt(scaleX * scaleY);
 
-    canvas.setAttribute('width', width * pixelDensity);
-    canvas.setAttribute('height', height * pixelDensity);
+    canvas.setAttribute('width', width * density);
+    canvas.setAttribute('height', height * density);
     c = canvas.getContext('2d');
 
     c.save();
@@ -201,12 +220,12 @@
     parse(svg);
     c.restore();
 
-    canvas.style.width =  width  + 'px';
+    canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
 
-    if (callback) {
-      callback();
-    }
+    result = props.toDataURL ? canvas.toDataURL() : canvas;
+
+    return props.callback ? props.callback(result) : result;
   
   };
 
